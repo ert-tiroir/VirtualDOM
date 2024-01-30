@@ -1,31 +1,44 @@
 
 import { EventEngine, EventTarget } from "../events/target.js";
+import { MutationEngine } from "../mutations/engine.js";
 import { INode, NodeType } from "./types.js";
 
-export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
-       implements INode<Node<DocumentType>, DocumentType> {
+export class Node<NodeID, DocumentType extends Node<NodeID, DocumentType>> extends EventTarget
+       implements INode<Node<NodeID, DocumentType>, DocumentType> {
     
+    protected index : NodeID;
+
     private document_      : DocumentType;
-    private parentNode_    : Node<DocumentType> | null;
+    private parentNode_    : Node<NodeID, DocumentType> | null;
     private indexInParent_ : number;
-    private childNodes_    : Node<DocumentType>[];
+    private childNodes_    : Node<NodeID, DocumentType>[];
 
     private readonly nodeName_ : string;
     private readonly nodeType_ : NodeType;
 
-    constructor (engine: EventEngine, document?: DocumentType) {
-        super(engine);
+    protected readonly mutationEngine : MutationEngine<NodeID>;
+
+    constructor (mutationEngine: MutationEngine<NodeID>, 
+                 eventEngine: EventEngine, 
+                 tag: string, document?: DocumentType) {
+        super(eventEngine);
+
+        this.mutationEngine = mutationEngine;
 
         if (document !== undefined) this.document_ = document;
 
         this.childNodes_ = [];
         this.unbindParent();
+
+        this.nodeName_ = tag;
+        this.index     = this.mutationEngine.createNode(tag);
+        console.log(tag, this.index);
     }
     protected setDocument (document: DocumentType) {
         this.document_ = document;
     }
 
-    private getSibling (delta: number): Node<DocumentType> | null {
+    private getSibling (delta: number): Node<NodeID, DocumentType> | null {
         if (this.parentNode_ === null) return null;
 
         let childs    = this.parentNode_.childNodes_;
@@ -41,30 +54,30 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
     get ownerDocument(): DocumentType {
         return this.document_;
     }
-    get parentElement(): Node<DocumentType> | null {
+    get parentElement(): Node<NodeID, DocumentType> | null {
         return this.parentNode_;
     }
-    get childsNodes(): readonly Node<DocumentType>[] {
+    get childsNodes(): readonly Node<NodeID, DocumentType>[] {
         return this.childNodes_;
     }
-    get firstChild(): Node<DocumentType> | null {
+    get firstChild(): Node<NodeID, DocumentType> | null {
         if (this.childNodes_.length === 0) return null;
 
         let child = this.childNodes_[0];
         if (child === undefined) return null;
         return child;
     }
-    get lastChild(): Node<DocumentType> | null {
+    get lastChild(): Node<NodeID, DocumentType> | null {
         if (this.childNodes_.length === 0) return null;
 
         let child = this.childNodes_[this.childNodes_.length - 1];
         if (child === undefined) return null;
         return child;
     }
-    get nextSibling(): Node<DocumentType> | null {
+    get nextSibling(): Node<NodeID, DocumentType> | null {
         return this.getSibling(1);
     }
-    get previousSibling(): Node<DocumentType> | null {
+    get previousSibling(): Node<NodeID, DocumentType> | null {
         return this.getSibling(-1);
     }
     get baseURI(): string {
@@ -98,7 +111,7 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
         this.parentNode_    = null;
         this.indexInParent_ = -1;
     }
-    private bindParent (parent: Node<DocumentType>, index: number) {
+    private bindParent (parent: Node<NodeID, DocumentType>, index: number) {
         this.parentNode_    = parent;
         this.indexInParent_ = index;
     }
@@ -108,7 +121,7 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
         this.parentNode_.removeChild(this);
     }
 
-    appendChild(child: Node<DocumentType>): void {
+    appendChild(child: Node<NodeID, DocumentType>): void {
         if (child.contains(this))
             throw new DOMException("Node.appendChild: The new child is an ancestor of the parent", "HierarchyRequestError");
     
@@ -118,9 +131,11 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
         child.bindParent( this, this.childNodes_.length );
 
         this.childNodes_.push(child);
+
+        this.mutationEngine.appendChild(this.index, child.index);
     }
-    contains(other: Node<DocumentType>): boolean {
-        let checking: Node<DocumentType> | null = other;
+    contains(other: Node<NodeID, DocumentType>): boolean {
+        let checking: Node<NodeID, DocumentType> | null = other;
 
         while (checking !== null) {
             if (checking === this) return true;
@@ -130,7 +145,7 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
 
         return false;
     }
-    getRootNode(): Node<DocumentType> {
+    getRootNode(): Node<NodeID, DocumentType> {
         if (this.parentNode_ === null) return this;
 
         return this.parentNode_.getRootNode();
@@ -138,10 +153,10 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
     hasChildNodes(): boolean {
         return this.childNodes_.length !== 0;
     }
-    isSameNode(other: Node<DocumentType>): boolean {
+    isSameNode(other: Node<NodeID, DocumentType>): boolean {
         return this === other;
     }
-    removeChild(child: Node<DocumentType>): void {
+    removeChild(child: Node<NodeID, DocumentType>): void {
         if (child.parentNode_ !== this)
             throw new DOMException("Node.removeChild: The node to be removed is not a child of this node", "NotFoundError");
     
@@ -156,8 +171,10 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
 
             child.indexInParent_ = i;
         }
+
+        this.mutationEngine.removeChild(this.index, child.index);
     }
-    insertBefore(newNode: Node<DocumentType>, referenceNode: Node<DocumentType>): void {
+    insertBefore(newNode: Node<NodeID, DocumentType>, referenceNode: Node<NodeID, DocumentType>): void {
         if (referenceNode.parentNode_ !== this)
             throw new DOMException("Node.insertBefore: Reference node is not a child of this node", "NotFoundError");
         if (newNode.contains(this))
@@ -176,8 +193,10 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
 
             child.indexInParent_ = i;
         }
+
+        this.mutationEngine.insertBefore(this.index, newNode.index, referenceNode.index);
     }
-    replaceChild(newChild: Node<DocumentType>, oldChild: Node<DocumentType>): void {
+    replaceChild(newChild: Node<NodeID, DocumentType>, oldChild: Node<NodeID, DocumentType>): void {
         if (oldChild.parentNode_ !== this)
             throw new DOMException("Node.replaceChild: Child to be replaced is not a child of this node", "NotFoundError");
         if (newChild.contains(this))
@@ -191,5 +210,7 @@ export class Node<DocumentType extends Node<DocumentType>> extends EventTarget
         this.childNodes_[newChild.indexInParent_] = newChild;
 
         oldChild.unbindParent();
+
+        this.mutationEngine.replaceChild(this.index, newChild.index, oldChild.index);
     }
 }

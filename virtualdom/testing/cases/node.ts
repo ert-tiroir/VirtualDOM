@@ -1,10 +1,12 @@
 import { DocumentType } from "../../virtual/document.js";
 import { TestingEventEngine } from "../utils/virtual/events/engine.js";
+import { IntegralMutationEngine } from "../../virtual/mutations/integer.js";
+import { TestingVirtualBridge } from "../utils/bridge/bridge.js";
 
 export function testCreateVirtualNode () {
     let engine = new TestingEventEngine();
-    let docu   = new DocumentType(engine, "localhost:5500");
-    let node   = docu.createElement();
+    let docu   = new DocumentType(new IntegralMutationEngine(new TestingVirtualBridge<number>()), engine, "localhost:5500");
+    let node   = docu.createElement("div");
     
     return !node.hasChildNodes()
         && node.getRootNode() === node
@@ -17,13 +19,14 @@ export function testCreateVirtualNode () {
         && node.parentElement   === null
         && node.firstChild      === null
         && node.lastChild       === null
-        && node.ownerDocument   === docu;
+        && node.ownerDocument   === docu
+        && node.nodeName        === "div";
 }
 
 export function testAppendChild () {
     let engine = new TestingEventEngine();
-    let docu   = new DocumentType(engine, "localhost:5500");
-    let node   = docu.createElement();
+    let docu   = new DocumentType(new IntegralMutationEngine(new TestingVirtualBridge<number>()), engine, "localhost:5500");
+    let node   = docu.createElement("div");
 
     docu.appendChild(node);
 
@@ -39,8 +42,8 @@ export function testAppendChild () {
 export function testCircularAppend () {
     try {
         let engine = new TestingEventEngine();
-        let docu   = new DocumentType(engine, "localhost:5500");
-        let node   = docu.createElement();
+        let docu   = new DocumentType(new IntegralMutationEngine(new TestingVirtualBridge<number>()), engine, "localhost:5500");
+        let node   = docu.createElement("div");
     
         docu.appendChild(node);
         node.appendChild(docu);
