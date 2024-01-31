@@ -15,7 +15,10 @@ export class DOMMutationPatcher extends RegisteredMutationPatcher<number> {
         if (id == 0) this.nodes[id] = this.document;
         else if (tag === "#text") this.nodes[id] = document.createTextNode("");
         else this.nodes [id] = document.createElement(tag);
-        console.log(this.nodes[id]);
+
+        let node = this.nodes[id];
+        if (node !== undefined)
+            (node as any).nodeID = id;
     }
     deleteElement(id: number): void {
         this.nodes [id] = undefined;

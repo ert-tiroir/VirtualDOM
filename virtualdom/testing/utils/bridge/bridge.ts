@@ -9,5 +9,11 @@ export class TestingVirtualBridge<NodeID> implements VirtualBridge<NodeID> {
     constructor () {
         this.patches = [];
     }
+    subscribe(_1: string, _2: NodeID): void {
+        throw new Error("Method not implemented.");
+    }
+    unsubscribe(_1: string, _2: NodeID): void {
+        throw new Error("Method not implemented.");
+    }
     patches: Mutation<NodeID>[];
 }

@@ -3,9 +3,8 @@ import { MutationEngine } from "./mutations/engine.js";
 import { Node } from "./tree/node.js";
 import { Text } from "./tree/text.js";
 
-export class DocumentType<NodeID> extends Node<NodeID, DocumentType<NodeID>> {
-    constructor (mutationEngine: MutationEngine<NodeID>, engine: IEventEngine<Node<NodeID, DocumentType<NodeID>>>, baseURI: string) {
-        console.log(mutationEngine, engine, baseURI)
+export class DocumentType<NodeID extends number | string | symbol> extends Node<NodeID, DocumentType<NodeID>> {
+    constructor (mutationEngine: MutationEngine<NodeID>, engine: IEventEngine<NodeID, Node<NodeID, DocumentType<NodeID>>>, baseURI: string) {
         super(mutationEngine, engine, "document");
 
         this.setDocument(this);

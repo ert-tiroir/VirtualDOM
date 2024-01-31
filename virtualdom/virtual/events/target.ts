@@ -1,21 +1,21 @@
-import { Event, EventCompleteOptions, EventListener, EventOptions, EventType, IEventEngine, IEventTarget } from "./types";
+import { VirtualEvent, EventCompleteOptions, EventListener, EventOptions, EventType, IEventEngine, IEventTarget } from "./types";
 
-export type EventEngine = IEventEngine<EventTarget>;
-type ListenerArray      = [EventListener, EventCompleteOptions][];
-type ListenerContainer  = { [key: EventType]: ListenerArray };
+export type EventEngine<NodeID> = IEventEngine<NodeID, EventTarget<NodeID>>;
+type ListenerArray    <NodeID>  = [EventListener<NodeID>, EventCompleteOptions][];
+type ListenerContainer<NodeID>  = { [key: EventType]: ListenerArray<NodeID> };
 
-export class EventTarget implements IEventTarget {
-    readonly engine    : EventEngine;
-    private  listeners : ListenerContainer;
+export class EventTarget<NodeID> implements IEventTarget<NodeID> {
+    readonly engine    : EventEngine<NodeID>;
+    private  listeners : ListenerContainer<NodeID>;
 
-    constructor (engine: EventEngine) {
+    constructor (engine: EventEngine<NodeID>) {
         this.engine = engine;
 
         this.listeners = {};
     }
 
-    private getListenerArray (type: EventType): ListenerArray {
-        let currentArray: ListenerArray | undefined = this.listeners[type];
+    private getListenerArray (type: EventType): ListenerArray<NodeID> {
+        let currentArray: ListenerArray<NodeID> | undefined = this.listeners[type];
         if (currentArray !== undefined) return currentArray;
 
         return this.listeners[type] = [];
@@ -34,8 +34,8 @@ export class EventTarget implements IEventTarget {
         return options;
     }
 
-    addEventListener (type: EventType, listener: EventListener, options?: EventOptions): void {
-        let listenerArray: ListenerArray = this.getListenerArray(type);
+    addEventListener (type: EventType, listener: EventListener<NodeID>, options?: EventOptions): void {
+        let listenerArray: ListenerArray<NodeID> = this.getListenerArray(type);
 
         options = this.fillOptions(options);
 
@@ -43,14 +43,14 @@ export class EventTarget implements IEventTarget {
 
         this.engine.subscribe(type, this);
     };
-    removeEventListener (type: EventType, listener: EventListener, options?: EventOptions): void {
-        let listenerArray: ListenerArray = this.getListenerArray(type);
+    removeEventListener (type: EventType, listener: EventListener<NodeID>, options?: EventOptions): void {
+        let listenerArray: ListenerArray<NodeID> = this.getListenerArray(type);
 
         options = this.fillOptions(options);
 
         let index = -1;
         for (let id = 0; id < listenerArray.length; id ++) {
-            let localListenerAndOptions: [EventListener, EventCompleteOptions] | undefined = listenerArray[id];
+            let localListenerAndOptions: [EventListener<NodeID>, EventCompleteOptions] | undefined = listenerArray[id];
             if (localListenerAndOptions === undefined) continue ;
 
             let localListener = localListenerAndOptions[0];
@@ -74,15 +74,15 @@ export class EventTarget implements IEventTarget {
             this.engine.unsubscribe(type, this);
     };
 
-    private runEvent (event: Event, listener: EventListener) {
+    private runEvent (event: VirtualEvent<NodeID>, listener: EventListener<NodeID>) {
         if (listener === null) return ;
 
         if ("handleEvent" in listener)
             listener.handleEvent(event);
         else listener(event);
     }
-    dispatchEvent (type: EventType, event: Event): void {
-        let listenerArray: ListenerArray = this.getListenerArray(type);
+    dispatchEvent (type: EventType, event: VirtualEvent<NodeID>): void {
+        let listenerArray: ListenerArray<NodeID> = this.getListenerArray(type);
 
         for (let [listener] of listenerArray)
             this.runEvent(event, listener);

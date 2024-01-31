@@ -3,10 +3,10 @@ import { EventEngine } from "../events/target.js";
 import { MutationEngine } from "../mutations/engine.js";
 import { Node } from "./node.js";
 
-export class CharacterData<NodeID, DocumentType extends Node<NodeID, DocumentType>> extends Node<NodeID, DocumentType> {
+export class CharacterData<NodeID extends number | string | symbol, DocumentType extends Node<NodeID, DocumentType>> extends Node<NodeID, DocumentType> {
     private data_: string;
     
-    constructor (mutationEngine: MutationEngine<NodeID>, eventEngine: EventEngine, document?: DocumentType) {
+    constructor (mutationEngine: MutationEngine<NodeID>, eventEngine: EventEngine<NodeID>, document?: DocumentType) {
         super(mutationEngine, eventEngine, "#text", document); 
 
         this.data_ = "";

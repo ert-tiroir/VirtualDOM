@@ -15,7 +15,7 @@ export enum NodeType {
     DOCUMENT_FRAGMENT_NODE       = 11
 }
 
-export interface INode<SelfType extends INode<SelfType, DocumentType>, DocumentType extends INode<SelfType, DocumentType>> extends IEventTarget {
+export interface INode<NodeID, SelfType extends INode<NodeID, SelfType, DocumentType>, DocumentType extends INode<NodeID, SelfType, DocumentType>> extends IEventTarget<NodeID> {
     get ownerDocument (): DocumentType;
     get parentElement (): SelfType | null;
 

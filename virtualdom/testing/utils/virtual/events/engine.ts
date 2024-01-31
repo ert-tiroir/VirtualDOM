@@ -1,17 +1,14 @@
 
 import { DocumentType } from "virtualdom/virtual/document.js";
-import { Event, EventType, IEventEngine } from "virtualdom/virtual/events/types.js";
+import { VirtualEvent, EventType, IEventEngine } from "virtualdom/virtual/events/types.js";
 import { Node } from "virtualdom/virtual/tree/node.js";
 
-export class TestingEventEngine implements IEventEngine<Node<number, DocumentType<number>>> {
-    subscribe(type: EventType, target: Node<number, DocumentType<number>>): void {
-        console.log(type, target);
+export class TestingEventEngine implements IEventEngine<number, Node<number, DocumentType<number>>> {
+    subscribe(_type: EventType, _target: Node<number, DocumentType<number>>): void {
     }
-    unsubscribe(type: EventType, target: Node<number, DocumentType<number>>): void {
-        console.log(type, target);
+    unsubscribe(_type: EventType, _target: Node<number, DocumentType<number>>): void {
     }
-    dispatchEvent(type: EventType, event: Event): void {
-        console.log(type, event);
+    dispatchEvent(_type: EventType, _id: number, _event: VirtualEvent<number>): void {
     }
 
 }

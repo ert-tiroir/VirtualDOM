@@ -1,12 +1,13 @@
 import { VirtualBridge } from "../../bridge/abstract.js";
-import { AppendChildMutationData, CreateNodeMutationData, DeleteNodeMutationData, InsertBeforeMutationData, Mutation, MutationType, RemoveChildMutationData, ReplaceChildMutationData, SetProperty } from "../../mutations/types.js";
+import { AppendChildMutationData, CallProperty, CreateNodeMutationData, DeleteNodeMutationData, InsertBeforeMutationData, Mutation, MutationType, RemoveChildMutationData, ReplaceChildMutationData, SetProperty } from "../../mutations/types.js";
 
-export abstract class MutationEngine<NodeID> {
+export abstract class MutationEngine<NodeID extends number | string | symbol> {
     abstract next (current: NodeID): NodeID;
     abstract default (): NodeID;
 
     private local:  NodeID;
     private bridge: VirtualBridge<NodeID>;
+    private nodes: Record<NodeID, any>;
     private send (data: Mutation<NodeID>): void {
         this.bridge.sendPatch(data);
     }
@@ -15,14 +16,21 @@ export abstract class MutationEngine<NodeID> {
         this.local = this.default();
 
         this.bridge = bridge;
+        this.nodes  = {} as Record<NodeID, any>;
     }
 
-    createNode (tag: string): NodeID {
+    getNode (id: NodeID): any {
+        return this.nodes[id];
+    }
+
+    createNode (tag: string, node: any): NodeID {
         let id = this.local;
         this.local = this.next(this.local);
 
         let data: CreateNodeMutationData<NodeID> = { id: id, tag: tag };
         this.send({ type: MutationType.CREATE_NODE, ...data });
+
+        this.nodes[id] = node;
 
         return id;
     }
@@ -49,5 +57,9 @@ export abstract class MutationEngine<NodeID> {
     setProperty (node: NodeID, path: string[], value: any): void {
         let data: SetProperty<NodeID> = { id: node, path: path, value: value };
         this.send({ type: MutationType.SET_PROPERTY, ...data });
+    }
+    callProperty (node: NodeID, path: string[], args: any[]): void {
+        let data: CallProperty<NodeID> = { id: node, path: path, args: args };
+        this.send({ type: MutationType.CALL_PROPERTY, ...data });
     }
 }

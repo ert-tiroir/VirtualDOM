@@ -1,4 +1,4 @@
-import { AppendChildMutationData, CreateNodeMutationData, DeleteNodeMutationData, InsertBeforeMutationData, Mutation, MutationPatcher, MutationType, RemoveChildMutationData, ReplaceChildMutationData, SetProperty } from "../types.js";
+import { AppendChildMutationData, CallProperty, CreateNodeMutationData, DeleteNodeMutationData, InsertBeforeMutationData, Mutation, MutationPatcher, MutationType, RemoveChildMutationData, ReplaceChildMutationData, SetProperty } from "../types.js";
 
 export abstract class RegisteredMutationPatcher<NodeID> implements MutationPatcher<NodeID> {
     abstract createElement (id: NodeID, tag: string): void;
@@ -60,6 +60,25 @@ export abstract class RegisteredMutationPatcher<NodeID> implements MutationPatch
 
         object[name] = mutation.value;
     }
+    callProperty(mutation: CallProperty<NodeID>): void {
+        if (mutation.path.length === 0) return ;
+
+        let object: any | undefined = this.getElement( mutation.id );
+        if (object === undefined) return ;
+
+        for (let i = 0; i + 1 < mutation.path.length; i ++) {
+            let name: string | undefined = mutation.path[i];
+            if (name === undefined) return ;
+
+            object = object[name];
+            if (object === undefined) return ;
+        }
+
+        let name: string | undefined = mutation.path[mutation.path.length - 1];
+        if (name === undefined) return ;
+
+        object[name](...mutation.args);
+    }
 
     apply(mutation: Mutation<NodeID>): void {
         if (mutation.type === MutationType.CREATE_NODE) {
@@ -111,6 +130,15 @@ export abstract class RegisteredMutationPatcher<NodeID> implements MutationPatch
             if (!("value" in mutation)) return ;
 
             this.setProperty(mutation);
+            return ;
+        }
+        if (mutation.type === MutationType.CALL_PROPERTY) {
+            if (!("id"   in mutation)) return ;
+            if (!("path" in mutation)) return ;
+            if (!("args" in mutation)) return ;
+
+            this.callProperty(mutation);
+            return ;
         }
     }
 }

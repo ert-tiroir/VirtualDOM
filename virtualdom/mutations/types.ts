@@ -8,7 +8,8 @@ export enum MutationType {
     INSERT_BEFORE,
     REPLACE_CHILD,
 
-    SET_PROPERTY
+    SET_PROPERTY,
+    CALL_PROPERTY
 }
 
 export type CreateNodeMutationData  <NodeID> = { id: NodeID, tag: string };
@@ -18,7 +19,8 @@ export type RemoveChildMutationData <NodeID> = { parent: NodeID, child: NodeID }
 export type InsertBeforeMutationData<NodeID> = { parent: NodeID, newNode: NodeID, reference: NodeID };
 export type ReplaceChildMutationData<NodeID> = { parent: NodeID, newChild: NodeID, oldChild: NodeID };
 
-export type SetProperty<NodeID> = { id: NodeID, path: string[], value: any };
+export type SetProperty <NodeID> = { id: NodeID, path: string[], value: any };
+export type CallProperty<NodeID> = { id: NodeID, path: string[], args:  any[] };
 
 export type Mutation<NodeID> = {
     type: MutationType,
@@ -30,9 +32,14 @@ export type Mutation<NodeID> = {
   | InsertBeforeMutationData<NodeID>
   | ReplaceChildMutationData<NodeID>
   | SetProperty             <NodeID>
+  | CallProperty            <NodeID>
 );
 
 export interface MutationPatcher<NodeID> {
+    createElement (id: NodeID, tag: string): void;
+    deleteElement (id: NodeID): void;
+    getElement    (id: NodeID): Node | undefined;
+    
     createNode   (mutation: CreateNodeMutationData  <NodeID>): void;
     deleteNode   (mutation: DeleteNodeMutationData  <NodeID>): void;
     appendChild  (mutation: AppendChildMutationData <NodeID>): void;
@@ -40,6 +47,7 @@ export interface MutationPatcher<NodeID> {
     insertBefore (mutation: InsertBeforeMutationData<NodeID>): void;
     replaceChild (mutation: ReplaceChildMutationData<NodeID>): void;
     setProperty  (mutation: SetProperty             <NodeID>): void;
+    callProperty (mutation: CallProperty            <NodeID>): void;
 
     apply (mutation: Mutation<NodeID>): void;
 }

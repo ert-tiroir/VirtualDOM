@@ -3,10 +3,56 @@ import { EventEngine, EventTarget } from "../events/target.js";
 import { MutationEngine } from "../mutations/engine.js";
 import { INode, NodeType } from "./types.js";
 
-export class Node<NodeID, DocumentType extends Node<NodeID, DocumentType>> extends EventTarget
-       implements INode<Node<NodeID, DocumentType>, DocumentType> {
+function checkWhiteSpace (value: string): boolean {
+    return /\s/g.test(value);
+}
+export class VClassList {
+    private list: string[];
+    private call: (path: string[], args:  any[]) => void;
+
+    constructor (list: string[], call: (path: string[], args: any[]) => void) {
+        this.list = list;
+
+        this.call = call;
+
+        return new Proxy(this, {
+            get: (target, p, receiver) => {
+                let num = new Number(p).valueOf();
+                if (!isNaN(num))
+                    return this.list[num];
+
+                return Reflect.get(target, p, receiver);
+            }
+        })
+    }
+
+    get length () {
+        return this.list.length;
+    }
+
+    add (clazz: string) {
+        if (checkWhiteSpace(clazz))
+            throw new DOMException("DOMTokenList.add: The token can not contain whitespace.", "InvalidCharacterError");
+
+        this.list.push(clazz);
+        this.call([ "classList", "add" ], [ clazz ])
+    }
+    remove (clazz: string) {
+        if (checkWhiteSpace(clazz))
+            throw new DOMException("DOMTokenList.remove: The token can not contain whitespace.", "InvalidCharacterError");
+
+        let index = this.list.indexOf(clazz);
+        if (index === -1) return ;
+
+        this.list.splice(index, 1);
+        this.call([ "classList", "remove" ], [ clazz ])
+    }
+}
+
+export class Node<NodeID extends number | string | symbol, DocumentType extends Node<NodeID, DocumentType>> extends EventTarget<NodeID>
+       implements INode<NodeID, Node<NodeID, DocumentType>, DocumentType> {
     
-    protected index : NodeID;
+    readonly index : NodeID;
 
     private document_      : DocumentType;
     private parentNode_    : Node<NodeID, DocumentType> | null;
@@ -18,8 +64,11 @@ export class Node<NodeID, DocumentType extends Node<NodeID, DocumentType>> exten
 
     protected readonly mutationEngine : MutationEngine<NodeID>;
 
+    private classNames_: string[];
+    private classList_: VClassList; 
+
     constructor (mutationEngine: MutationEngine<NodeID>, 
-                 eventEngine: EventEngine, 
+                 eventEngine: EventEngine<NodeID>, 
                  tag: string, document?: DocumentType) {
         super(eventEngine);
 
@@ -27,12 +76,15 @@ export class Node<NodeID, DocumentType extends Node<NodeID, DocumentType>> exten
 
         if (document !== undefined) this.document_ = document;
 
+        this.classNames_ = [];
+        this.classList_  = new VClassList(this.classNames_,
+            (path: string[], args: any[]) => this.mutationEngine.callProperty(this.index, path, args));
+
         this.childNodes_ = [];
         this.unbindParent();
 
         this.nodeName_ = tag;
-        this.index     = this.mutationEngine.createNode(tag);
-        console.log(tag, this.index);
+        this.index     = this.mutationEngine.createNode(tag, this);
     }
     protected setDocument (document: DocumentType) {
         this.document_ = document;
@@ -49,6 +101,24 @@ export class Node<NodeID, DocumentType extends Node<NodeID, DocumentType>> exten
         if (child === undefined) return null;
 
         return child;
+    }
+
+    get className (): string {
+        let array = [];
+        for (let clazz of this.classNames_) array.push(clazz);
+
+        return array.join(" ");
+    }
+    set className (value: string) {
+        while (this.classNames_.length != 0) this.classNames_.pop();
+
+        for (let clazz of value.split(" ")) this.classNames_.push(clazz);
+
+        this.mutationEngine.setProperty(this.index, [ "className" ], value);
+    }
+
+    get classList () {
+        return this.classList_;
     }
 
     get ownerDocument(): DocumentType {
