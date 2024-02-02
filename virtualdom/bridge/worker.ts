@@ -16,7 +16,7 @@ type Message<NodeID> = { message: MessageType.PATCH, mutation: Mutation<NodeID> 
                      | { message: MessageType.UNSUBSCRIBE, target: NodeID, event: string }
                      | { message: MessageType.DISPATCH, target: NodeID, type: string, event: VirtualEvent<NodeID> };
 
-export class WorkerVirtualBridge<NodeID extends "number" | "string" | "symbol"> implements VirtualBridge<NodeID> {
+export class WorkerVirtualBridge<NodeID extends number | string | symbol> implements VirtualBridge<NodeID> {
     eventEngine: EventEngine<NodeID>;
     mutationEngine: MutationEngine<NodeID>;
     channel: Channel;

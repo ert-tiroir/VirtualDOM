@@ -3,7 +3,7 @@ import { Node }  from "../tree/node.js";
 import { DocumentType } from "../document.js";
 import { VirtualBridge } from "../../bridge/abstract.js";
 
-export class BridgeEngine<NodeID extends "string" | "number" | "symbol"> implements IEventEngine<NodeID, Node<NodeID, DocumentType<NodeID>>> {
+export class BridgeEngine<NodeID extends string | number | symbol> implements IEventEngine<NodeID, Node<NodeID, DocumentType<NodeID>>> {
     private bridge:  VirtualBridge<NodeID>;
     private objects: Record<NodeID, Node<NodeID, DocumentType<NodeID>>>;
 
