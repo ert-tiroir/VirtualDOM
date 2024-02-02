@@ -127,8 +127,7 @@ export class WorkerDOMBridge<NodeID> implements DOMBridge<NodeID> {
         if (event instanceof CompositionEvent)
             forwardedEvent = { ...forwardedEvent, data: event.data }
         else if (event instanceof FocusEvent) {
-            if (event.relatedTarget !== null && "nodeID" in event.relatedTarget && event.relatedTarget.nodeID !== null)
-                forwardedEvent = { ...forwardedEvent, relatedTarget: this.asNodeID(event.relatedTarget) };
+            forwardedEvent = { ...forwardedEvent, relatedTarget: this.asNodeID(event.relatedTarget) };
         } else if (event instanceof InputEvent) {
             forwardedEvent = { ...forwardedEvent, data: event.data, inputType: event.inputType };
         } else if (event instanceof KeyboardEvent) {
@@ -168,6 +167,14 @@ export class WorkerDOMBridge<NodeID> implements DOMBridge<NodeID> {
                 shiftKey: event.shiftKey,
                 x: event.x,
                 y: event.y
+            }
+        } else if (event instanceof WheelEvent) {
+            forwardedEvent = {
+                ...forwardedEvent,
+                deltaX: event.deltaX,
+                deltaY: event.deltaY,
+                deltaZ: event.deltaZ,
+                deltaMode: event.deltaMode
             }
         }
 

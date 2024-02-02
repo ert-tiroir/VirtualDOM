@@ -47,6 +47,12 @@ export type VirtualMouseEvent<NodeID> = {
     x: number,
     y: number
 };
+export type VirtualWheelEvent = {
+    deltaX: number,
+    deltaY: number,
+    deltaZ: number,
+    deltaMode: number
+}
 
 export type VirtualEvent<NodeID> = ({
     bubbles: boolean,
@@ -64,6 +70,7 @@ export type VirtualEvent<NodeID> = ({
   | VirtualInputEvent
   | VirtualKeyboardEvent
   | VirtualMouseEvent<NodeID>
+  | VirtualWheelEvent
 )) | Event;
 
 /* EVENT PROPERTIES */
