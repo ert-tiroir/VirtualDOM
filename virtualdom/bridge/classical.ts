@@ -1,7 +1,7 @@
-import { Mutation, MutationPatcher } from "virtualdom/mutations/types.js";
+import { Mutation, MutationPatcher } from "../mutations/types.js";
 import { DOMBridge, VirtualBridge } from "./abstract.js";
-import { EventSubscribable } from "virtualdom/events/subscribable.js";
-import { EventEngine } from "virtualdom/virtual/events/target.js";
+import { EventSubscribable } from "../events/subscribable.js";
+import { EventEngine } from "../virtual/events/target.js";
 
 class ClassicalVirtualBridge<NodeID> implements VirtualBridge<NodeID> {
     domBridge: ClassicalDOMBridge<NodeID>;

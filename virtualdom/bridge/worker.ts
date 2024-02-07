@@ -1,11 +1,11 @@
-import { EventSubscribable } from "virtualdom/events/subscribable.js";
+import { EventSubscribable } from "../events/subscribable.js";
 import { Mutation, MutationPatcher } from "../mutations/types.js";
 import { EventEngine } from "../virtual/events/target.js";
 import { DOMBridge, VirtualBridge } from "./abstract.js";
 import { Channel } from "./channels/channel.js";
 import { Transceiver } from "./channels/transceiver.js";
-import { VirtualEvent } from "virtualdom/virtual/events/types.js";
-import { MutationEngine } from "virtualdom/virtual/mutations/engine.js";
+import { VirtualEvent } from "../virtual/events/types.js";
+import { MutationEngine } from "../virtual/mutations/engine.js";
 
 enum MessageType {
     PATCH, SUBSCRIBE, UNSUBSCRIBE, DISPATCH
